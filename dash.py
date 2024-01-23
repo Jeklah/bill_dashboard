@@ -3,14 +3,15 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.random.seed(42)
-dates = pd.date_range(start='2022-01-01', end='2022-12-31', freq='D')
-usage = np.random.randint(0, 100, len(dates))
-df = pd.DataFrame({'Date': dates, 'Usage': usage})
 
-st.title('Daily Usage')
+# Generate some data.
+data = pd.DataFrame({
+    'Date': pd.date_range('2023-01-01', '2023-12-31', freq='D'),
+    'Electricity': np.random.randint(0, 100, 365),
+    'Gas': np.random.randint(0, 50, 365)
+})
+
 st.sidebar.title('Sidebar')
-
 addresses = ['114, Basingstoke Road, Reading',
              '15 Grage Avenue, Reading',
              '38 Swainstone Road, Reading',
@@ -21,27 +22,52 @@ addresses = ['114, Basingstoke Road, Reading',
              '5, St Edwards Road, Reading']
 selected_address = st.sidebar.selectbox('Select Address', addresses)
 
+
+# Sidebar sliders to adjust usage.
+electricity_usage = st.sidebar.slider(
+    'Electricity Usage', min_value=0, max_value=100, value=50, step=10)
+gas_usage = st.sidebar.slider(
+    'Gas Usage', min_value=0, max_value=100, value=50, step=10)
+
+# Calculate monthly cost
+electricity_rate = 0.15
+gas_rate = 0.04
+
+monthly_elec_cost = electricity_usage * electricity_rate
+monthly_gas_cost = gas_usage * gas_rate
+
+# Filter data based on slider values
+filtered_data = data.copy()
+filtered_data['Electricity'] = filtered_data['Electricity'] * \
+    electricity_usage / 100
+filtered_data['Gas'] = filtered_data['Gas'] * gas_usage / 100
+
+# Select a month to plot
+selected_month = st.sidebar.selectbox(
+    'Select Month', data['Date'].dt.strftime('%B').unique())
+
+# Group data by month.
+monthly_data = filtered_data[data['Date'].dt.strftime('%B') == selected_month]
+
+
+st.title('Daily Usage')
 st.write(f'Usage for {selected_address}')
-usage_adjustment = st.sidebar.slider(
-    'Adjust Usage', min_value=0, max_value=100, value=50)
 
-df['Adjusted Usage'] = df['Usage'] * (usage_adjustment / 100)
+# Display monthly cost
+st.write(f'Monthly Electricity Cost: £{monthly_elec_cost:.2f}')
+st.write(f'Monthly Gas Cost: £{monthly_gas_cost:.2f}')
 
-df['Month'] = df['Date'].dt.month_name()
-monthly_data = df.groupby(['Month', df['Date'].dt.day])[
-    'Adjusted Usage'].sum().reset_index()
+# Plot bar graphs for each month
+fig, ax = plt.subplots()
+ax.bar(monthly_data['Date'], monthly_data['Electricity'], label='Electricity')
+ax.bar(monthly_data['Date'], monthly_data['Gas'], label='Gas', alpha=0.7)
+plt.xlabel('Month')
+plt.ylabel('Usage')
+plt.title(f'Daily Electricity and Gas Usage for {selected_month}')
+plt.xticks(rotation=45)
+plt.legend()
+plt.tight_layout()
+st.pyplot(fig)
 
-months = df['Month'].unique()
-for month in months:
-    data = monthly_data[monthly_data['Month'] == month]
-    plt.figure(figsize=(10, 5))
-    plt.bar(data['Date'], data['Adjusted Usage'])
-    plt.xlabel('Day')
-    plt.ylabel('Usage')
-    plt.title(f'Daily Usage - {month}')
-    plt.xticks(rotation=45)
-    st.pyplot(plt)
-
-
-st.subheader('Example Data')
-st.dataframe(df)
+# Display data table
+# st.write(fig)
