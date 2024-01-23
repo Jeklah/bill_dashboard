@@ -57,6 +57,13 @@ st.write(f'Usage for {selected_address}')
 st.write(f'Monthly Electricity Cost: £{monthly_elec_cost:.2f}')
 st.write(f'Monthly Gas Cost: £{monthly_gas_cost:.2f}')
 
+# Arrows to select previous and next month
+current_index = df[df['Month'] == selected_month].index[0]
+if current_index > 0:
+    st.button('Previous Month')
+if current_index < len(df) - 1:
+    st.button('Next Month')
+
 # Plot bar graphs for each month
 fig, ax = plt.subplots()
 ax.bar(monthly_data['Date'], monthly_data['Electricity'], label='Electricity')
@@ -68,6 +75,3 @@ plt.xticks(rotation=45)
 plt.legend()
 plt.tight_layout()
 st.pyplot(fig)
-
-# Display data table
-# st.write(fig)
